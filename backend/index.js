@@ -23,6 +23,18 @@ const simplificarFilme = (filme) => {
   }
 }
 
+const simplificarProvedores = (provedores) => {
+  if (!provedores) {
+    return []
+  }
+  return provedores.map((provedor) => {
+    return {
+      nome: provedor.provider_name,
+      logo: `https://image.tmdb.org/t/p/w92${provedor.logo_path}`
+    }
+  })
+}
+
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -60,6 +72,41 @@ app.get('/filmes', (req, res) => {
   })
   .catch((erro) => {
     console.log(erro.message)
+    res.status(502).json({ mensagem: 'Não foi possível consultar o catálogo de filmes.' })
+  })
+})
+
+app.get('/filme', (req, res) => {
+  const id = req.query.id
+  if (!id) {
+    return res.status(400).json({ mensagem: 'Informe o id do filme.' })
+  }
+  tmdbClient.get(`/movie/${id}`, {
+    params: {
+      append_to_response: 'watch/providers'
+    }
+  })
+  .then((result) => {
+    const filme = result.data
+    const brasil = filme['watch/providers'].results.BR || {}
+    res.json({
+      ...simplificarFilme(filme),
+      duracao: filme.runtime ? filme.runtime : null,
+      generos: filme.genres.map((genero) => genero.name),
+      sinopse: filme.overview ? filme.overview : null,
+      fundo: filme.backdrop_path ? `https://image.tmdb.org/t/p/w780${filme.backdrop_path}` : null,
+      ondeAssistir: {
+        assinatura: simplificarProvedores(brasil.flatrate),
+        aluguel: simplificarProvedores(brasil.rent),
+        compra: simplificarProvedores(brasil.buy)
+      }
+    })
+  })
+  .catch((erro) => {
+    console.log(erro.message)
+    if (erro.response && erro.response.status === 404) {
+      return res.status(404).json({ mensagem: 'Filme não encontrado.' })
+    }
     res.status(502).json({ mensagem: 'Não foi possível consultar o catálogo de filmes.' })
   })
 })
