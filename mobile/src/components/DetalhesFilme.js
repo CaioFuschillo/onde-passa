@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import Carregando from './Carregando'
+import Provedores from './Provedores'
 import backendClient from '../utils/backendClient'
 import { formatarDuracao, formatarNota } from '../utils/formatacao'
 
@@ -32,6 +33,11 @@ export default function DetalhesFilme({ id, onVoltar }) {
       setCarregando(false)
     })
   }, [id])
+
+  const semProvedores = filme !== null &&
+    filme.ondeAssistir.assinatura.length === 0 &&
+    filme.ondeAssistir.aluguel.length === 0 &&
+    filme.ondeAssistir.compra.length === 0
 
   return (
     <View style={styles.container}>
@@ -71,6 +77,18 @@ export default function DetalhesFilme({ id, onVoltar }) {
             </View>
             <Text style={styles.secao}>Sinopse</Text>
             <Text style={styles.texto}>{filme.sinopse ? filme.sinopse : 'Sinopse indisponível.'}</Text>
+            <Text style={styles.secao}>Onde assistir no Brasil</Text>
+            {
+              semProvedores ?
+                <Text style={styles.texto}>Este filme não está disponível em nenhum serviço no Brasil no momento.</Text>
+              :
+                <View>
+                  <Provedores titulo="Assinatura" provedores={filme.ondeAssistir.assinatura} />
+                  <Provedores titulo="Aluguel" provedores={filme.ondeAssistir.aluguel} />
+                  <Provedores titulo="Compra" provedores={filme.ondeAssistir.compra} />
+                </View>
+            }
+            <Text style={styles.justwatch}>Dados de disponibilidade: JustWatch</Text>
           </ScrollView>
       }
     </View>
@@ -149,5 +167,12 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     fontSize: 15,
     lineHeight: 22
+  },
+  justwatch: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginTop: 12,
+    marginBottom: 24
   }
 })
