@@ -18,6 +18,7 @@ export default function App() {
   const [termoBuscado, setTermoBuscado] = useState('')
   const [resultados, setResultados] = useState(null)
   const [filmeSelecionado, setFilmeSelecionado] = useState(null)
+  const [buscando, setBuscando] = useState(false)
 
   useEffect(() => {
     backendClient.get('/em-alta')
@@ -32,42 +33,67 @@ export default function App() {
     })
   }, [])
 
-  const buscar = () => {
-    setCarregando(true)
-    backendClient.get('/filmes', {
-      params: {
-        busca: termo
-      }
-    })
-    .then((result) => {
-      setResultados(result.data)
-      setTermoBuscado(termo)
+  useEffect(() => {
+    const termoLimpo = termo.trim()
+
+    if (termoLimpo === '') {
+      setResultados(null)
       setErro(null)
-      setCarregando(false)
-    })
-    .catch((falha) => {
-      console.log(falha)
-      if (falha.response && falha.response.data.mensagem) {
-        setErro(falha.response.data.mensagem)
-      }
-      else {
-        setErro('Não foi possível buscar os filmes.')
-      }
-      setCarregando(false)
-    })
-  }
+      setBuscando(false)
+      return
+    }
+
+    if (termoLimpo.length < 3) {
+      setBuscando(false)
+      return
+    }
+
+    let ativa = true
+
+    const agendamento = setTimeout(() => {
+      setBuscando(true)
+      backendClient.get('/filmes', {
+        params: {
+          busca: termoLimpo
+        }
+      })
+      .then((result) => {
+        if (ativa) {
+          setResultados(result.data)
+          setTermoBuscado(termoLimpo)
+          setErro(null)
+          setBuscando(false)
+        }
+      })
+      .catch((falha) => {
+        console.log(falha)
+        if (ativa) {
+          if (falha.response && falha.response.data.mensagem) {
+            setErro(falha.response.data.mensagem)
+          }
+          else {
+            setErro('Não foi possível buscar os filmes.')
+          }
+          setBuscando(false)
+        }
+      })
+    }, 600)
+
+    return () => {
+      ativa = false
+      clearTimeout(agendamento)
+    }
+  }, [termo])
 
   const limpar = () => {
     setTermo('')
-    setResultados(null)
-    setErro(null)
   }
 
   const voltar = () => {
     setFilmeSelecionado(null)
   }
 
-  const cargaInicial = emAlta.length === 0 && erro === null
+  const termoCurto = termo.trim().length > 0 && termo.trim().length < 3
 
   return (
     <SafeAreaProvider>
@@ -79,13 +105,19 @@ export default function App() {
             <View style={styles.tela}>
               <Busca
                 termo={termo}
+                buscando={buscando}
                 onTermoAlterado={setTermo}
-                onBuscar={buscar}
                 onLimpar={limpar} />
+              {
+                termoCurto ?
+                  <Text style={styles.dica}>Digite pelo menos 3 letras.</Text>
+                :
+                  null
+              }
               <View style={styles.conteudo}>
                 {
                   carregando ?
-                    <Carregando mensagem={cargaInicial ? 'Buscando os filmes em alta...' : 'Procurando filmes...'} />
+                    <Carregando mensagem="Buscando os filmes em alta..." />
                   :
                   erro ?
                     <Text style={styles.mensagem}>{erro}</Text>
@@ -123,9 +155,16 @@ const styles = StyleSheet.create({
   tela: {
     flex: 1
   },
+  dica: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginHorizontal: 16,
+    marginTop: 6
+  },
   conteudo: {
     flex: 1,
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
+    marginTop: 16
   },
   mensagem: {
     color: '#CBD5E1',

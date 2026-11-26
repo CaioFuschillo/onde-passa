@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 
-export default function Busca({ termo, onTermoAlterado, onBuscar, onLimpar }) {
+export default function Busca({ termo, buscando, onTermoAlterado, onLimpar }) {
   return (
     <View style={styles.linha}>
       <TextInput
@@ -9,6 +9,12 @@ export default function Busca({ termo, onTermoAlterado, onBuscar, onLimpar }) {
         onChangeText={onTermoAlterado}
         placeholder="Digite o título de um filme" />
       {
+        buscando ?
+          <ActivityIndicator size="small" color="#E0473C" />
+        :
+          null
+      }
+      {
         termo !== '' ?
           <Pressable style={styles.limpar} onPress={onLimpar}>
             <Text style={styles.textoLimpar}>✕</Text>
@@ -16,9 +22,6 @@ export default function Busca({ termo, onTermoAlterado, onBuscar, onLimpar }) {
         :
           null
       }
-      <Pressable style={styles.botao} onPress={onBuscar}>
-        <Text style={styles.textoBotao}>Buscar</Text>
-      </Pressable>
     </View>
   )
 }
@@ -28,8 +31,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 16
+    marginHorizontal: 16
   },
   campo: {
     flex: 1,
@@ -47,16 +49,5 @@ const styles = StyleSheet.create({
   textoLimpar: {
     color: '#FFFFFF',
     fontSize: 18
-  },
-  botao: {
-    backgroundColor: '#E0473C',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 11
-  },
-  textoBotao: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold'
   }
 })
