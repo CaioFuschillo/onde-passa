@@ -6,6 +6,7 @@ import Busca from './src/components/Busca'
 import Cabecalho from './src/components/Cabecalho'
 import Carregando from './src/components/Carregando'
 import Creditos from './src/components/Creditos'
+import DetalhesFilme from './src/components/DetalhesFilme'
 import ListaFilmes from './src/components/ListaFilmes'
 import backendClient from './src/utils/backendClient'
 
@@ -16,6 +17,7 @@ export default function App() {
   const [termo, setTermo] = useState('')
   const [termoBuscado, setTermoBuscado] = useState('')
   const [resultados, setResultados] = useState(null)
+  const [filmeSelecionado, setFilmeSelecionado] = useState(null)
 
   useEffect(() => {
     backendClient.get('/em-alta')
@@ -61,6 +63,10 @@ export default function App() {
     setErro(null)
   }
 
+  const voltar = () => {
+    setFilmeSelecionado(null)
+  }
+
   const cargaInicial = emAlta.length === 0 && erro === null
 
   return (
@@ -68,28 +74,41 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
         <Cabecalho />
-        <Busca
-          termo={termo}
-          onTermoAlterado={setTermo}
-          onBuscar={buscar}
-          onLimpar={limpar} />
-        <View style={styles.conteudo}>
-          {
-            carregando ?
-              <Carregando mensagem={cargaInicial ? 'Buscando os filmes em alta...' : 'Procurando filmes...'} />
-            :
-            erro ?
-              <Text style={styles.mensagem}>{erro}</Text>
-            :
-            resultados === null ?
-              <ListaFilmes titulo="Em alta nesta semana" filmes={emAlta} />
-            :
-            resultados.length === 0 ?
-              <Text style={styles.mensagem}>Nenhum filme encontrado para “{termoBuscado}”.</Text>
-            :
-              <ListaFilmes titulo={`Resultados para “${termoBuscado}”`} filmes={resultados} />
-          }
-        </View>
+        {
+          filmeSelecionado === null ?
+            <View style={styles.tela}>
+              <Busca
+                termo={termo}
+                onTermoAlterado={setTermo}
+                onBuscar={buscar}
+                onLimpar={limpar} />
+              <View style={styles.conteudo}>
+                {
+                  carregando ?
+                    <Carregando mensagem={cargaInicial ? 'Buscando os filmes em alta...' : 'Procurando filmes...'} />
+                  :
+                  erro ?
+                    <Text style={styles.mensagem}>{erro}</Text>
+                  :
+                  resultados === null ?
+                    <ListaFilmes
+                      titulo="Em alta nesta semana"
+                      filmes={emAlta}
+                      onSelecionar={setFilmeSelecionado} />
+                  :
+                  resultados.length === 0 ?
+                    <Text style={styles.mensagem}>Nenhum filme encontrado para “{termoBuscado}”.</Text>
+                  :
+                    <ListaFilmes
+                      titulo={`Resultados para “${termoBuscado}”`}
+                      filmes={resultados}
+                      onSelecionar={setFilmeSelecionado} />
+                }
+              </View>
+            </View>
+          :
+            <DetalhesFilme id={filmeSelecionado} onVoltar={voltar} />
+        }
         <Creditos />
       </SafeAreaView>
     </SafeAreaProvider>
@@ -100,6 +119,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1E1E2E'
+  },
+  tela: {
+    flex: 1
   },
   conteudo: {
     flex: 1,
